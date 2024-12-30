@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Response
 from dotenv import load_dotenv
 from app.services.github_service import GitHubService
 from app.services.claude_service import ClaudeService
+from app.services.openai_service import OpenAIService
 from app.core.limiter import limiter
 import os
-from app.prompts import SYSTEM_FIRST_PROMPT, SYSTEM_SECOND_PROMPT, SYSTEM_THIRD_PROMPT, ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
+from app.prompts import SYSTEM_FIRST_PROMPT, SYSTEM_SECOND_PROMPT, SYSTEM_THIRD_PROMPT, ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT, PODCAST_SSML_PROMPT
 from anthropic._exceptions import RateLimitError
 from pydantic import BaseModel
 from functools import lru_cache
 import re
+from tempfile import NamedTemporaryFile
 
 load_dotenv()
 
@@ -17,7 +19,7 @@ router = APIRouter(prefix="/generate", tags=["Claude"])
 # Initialize services
 github_service = GitHubService()
 claude_service = ClaudeService()
-
+openai_service = OpenAIService()
 
 # cache github data for 5 minutes to avoid double API calls from cost and generate
 @lru_cache(maxsize=100)
@@ -41,6 +43,7 @@ class ApiRequest(BaseModel):
     repo: str
     instructions: str
     api_key: str | None = None
+    audio: bool = False  # new param
 
 
 @router.post("")
@@ -51,8 +54,8 @@ async def generate(request: Request, body: ApiRequest):
         if len(body.instructions) > 1000:
             return {"error": "Instructions exceed maximum length of 1000 characters"}
 
-        if body.repo in ["fastapi", "streamlit", "flask", "api-analytics", "monkeytype"]:
-            return {"error": "Example repos cannot be regenerated"}
+        # if body.repo in ["fastapi", "streamlit", "flask", "api-analytics", "monkeytype"]:
+        #     return {"error": "Example repos cannot be regenerated"}
 
         # Get cached github data
         github_data = get_cached_github_data(body.username, body.repo)
@@ -64,84 +67,118 @@ async def generate(request: Request, body: ApiRequest):
 
         # Check combined token count
         combined_content = f"{file_tree}\n{readme}"
-        token_count = claude_service.count_tokens(combined_content)
 
-        # Modified token limit check
-        if 50000 < token_count < 190000 and not body.api_key:
-            return {
-                "error": f"File tree and README combined exceeds token limit (50,000). Current size: {token_count} tokens. This GitHub repository is too large for my wallet, but you can continue by providing your own Anthropic API key.",
-                "token_count": token_count,
-                "requires_api_key": True
-            }
-        elif token_count > 200000:
-            return {
-                "error": f"Repository is too large (>200k tokens) for analysis. Claude 3.5 Sonnet's max context length is 200k tokens. Current size: {token_count} tokens."
-            }
+        try:
+            token_count = claude_service.count_tokens(combined_content)
 
-        # Prepare system prompts with instructions if provided
-        first_system_prompt = SYSTEM_FIRST_PROMPT
-        third_system_prompt = SYSTEM_THIRD_PROMPT
-        if body.instructions:
-            first_system_prompt = first_system_prompt + \
-                "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
-            third_system_prompt = third_system_prompt + \
-                "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
+            # Modified token limit check
+            if 100000 < token_count < 120000 and not body.api_key:
+                return {
+                    "error": f"File tree and README combined exceeds token limit (50,000). Current size: {token_count} tokens. This GitHub repository is too large for my wallet, but you can continue by providing your own Anthropic API key.",
+                    "token_count": token_count,
+                    "requires_api_key": True
+                }
+            elif token_count > 120000:
+                return {
+                    "error": f"Repository is too large (>120k tokens) for analysis. OpenAI context is 128k max. Current size: {token_count} tokens."
+                }
+        except Exception as e:
+            print(f"{e} We couldn't get token count, lets proceed with LLM call, nonetheless")
+        # Create a temporary file and write the combined_content into it
+        with NamedTemporaryFile(delete=False, mode='w+', suffix='.txt') as temp_file:
+            temp_file.write(combined_content)
+            temp_file_path = temp_file.name  # Get the path of the temp file
 
-        # get the explanation for sysdesign from claude
-        explanation = claude_service.call_claude_api(
-            system_prompt=first_system_prompt,
-            data={
-                "file_tree": file_tree,
-                "readme": readme,
-                "instructions": body.instructions
-            },
-            api_key=body.api_key
-        )
+        try:
+
+            ssml_response = openai_service.call_openai_for_response([temp_file_path], PODCAST_SSML_PROMPT)
+
+            # Process the ssml_response as needed
+            # For example, you might want to return or log this response
+            print(ssml_response)
+
+        finally:
+            # Clean up the temporary file
+            os.remove(temp_file_path)
+
+        # # Prepare system prompts with instructions if provided
+        # first_system_prompt = SYSTEM_FIRST_PROMPT
+        # third_system_prompt = SYSTEM_THIRD_PROMPT
+        # if body.instructions:
+        #     first_system_prompt = first_system_prompt + \
+        #         "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
+        #     third_system_prompt = third_system_prompt + \
+        #         "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
+
+        # # get the explanation for sysdesign from claude
+        # explanation = claude_service.call_claude_api(
+        #     system_prompt=first_system_prompt,
+        #     data={
+        #         "file_tree": file_tree,
+        #         "readme": readme,
+        #         "instructions": body.instructions
+        #     },
+        #     api_key=body.api_key
+        # )
+
+        # Needs temp file from str
+        # so that path can be passed to ssml_response = call_gemini_flash_for_ssml(file_paths, ssml_prompt)
 
         # Check for BAD_INSTRUCTIONS response
-        if "BAD_INSTRUCTIONS" in explanation:
-            return {"error": "Invalid or unclear instructions provided"}
+        # if "BAD_INSTRUCTIONS" in explanation:
+        #     return {"error": "Invalid or unclear instructions provided"}
 
-        full_second_response = claude_service.call_claude_api(
-            system_prompt=SYSTEM_SECOND_PROMPT,
-            data={
-                "explanation": explanation,
-                "file_tree": file_tree
-            }
-        )
+        # full_second_response = claude_service.call_claude_api(
+        #     system_prompt=SYSTEM_SECOND_PROMPT,
+        #     data={
+        #         "explanation": explanation,
+        #         "file_tree": file_tree
+        #     }
+        # )
 
         # Extract component mapping from the response
-        start_tag = "<component_mapping>"
-        end_tag = "</component_mapping>"
-        component_mapping_text = full_second_response[
-            full_second_response.find(start_tag):
-            full_second_response.find(end_tag)
-        ]
+        # start_tag = "<component_mapping>"
+        # end_tag = "</component_mapping>"
+        # component_mapping_text = full_second_response[
+        #     full_second_response.find(start_tag):
+        #     full_second_response.find(end_tag)
+        # ]
 
         # get mermaid.js code from claude
-        mermaid_code = claude_service.call_claude_api(
-            system_prompt=third_system_prompt,
-            data={
-                "explanation": explanation,
-                "component_mapping": component_mapping_text,
-                "instructions": body.instructions
-            }
-        )
+        # mermaid_code = claude_service.call_claude_api(
+        #     system_prompt=third_system_prompt,
+        #     data={
+        #         "explanation": explanation,
+        #         "component_mapping": component_mapping_text,
+        #         "instructions": body.instructions
+        #     }
+        # )
 
-        # Check for BAD_INSTRUCTIONS response
-        if "BAD_INSTRUCTIONS" in mermaid_code:
-            return {"error": "Invalid or unclear instructions provided"}
+        # # Check for BAD_INSTRUCTIONS response
+        # if "BAD_INSTRUCTIONS" in mermaid_code:
+        #     return {"error": "Invalid or unclear instructions provided"}
 
-        # Process click events to include full GitHub URLs
-        processed_diagram = process_click_events(
-            mermaid_code,
-            body.username,
-            body.repo,
-            default_branch
-        )
+        # # Process click events to include full GitHub URLs
+        # processed_diagram = process_click_events(
+        #     mermaid_code,
+        #     body.username,
+        #     body.repo,
+        #     default_branch
+        # )
+        if not body.audio:
+            return {"diagram": "flowchart TB\n    subgraph Input\n        CLI[CLI Interface]:::input\n        API[API Interface]:::input\n    end\n\n    subgraph Orchestration\n        TM[Task Manager]:::core\n        PR[Platform Router]:::core\n    end\n\n    subgraph \"Planning Layer\"\n        TP[Task Planning]:::core\n        subgraph Planners\n            OP[OpenAI Planner]:::planner\n            GP[Gemini Planner]:::planner\n            LP[Local Ollama Planner]:::planner\n        end\n    end\n\n    subgraph \"Finding Layer\"\n        subgraph Finders\n            OF[OpenAI Finder]:::finder\n            GF[Gemini Finder]:::finder\n            LF[Local Ollama Finder]:::finder\n            MF[MLX Finder]:::finder\n        end\n    end\n\n    subgraph \"Execution Layer\"\n        AE[Android Executor]:::executor\n        OE[OSX Executor]:::executor\n    end\n\n    subgraph \"External Services\"\n        direction TB\n        OAPI[OpenAI API]:::external\n        GAPI[Google Gemini API]:::external\n        LAPI[Local Ollama Instance]:::external\n    end\n\n    subgraph \"Platform Tools\"\n        direction TB\n        ADB[Android Debug Bridge]:::platform\n        OSX[OSX System Tools]:::platform\n    end\n\n    subgraph \"Configuration\"\n        direction TB\n        MS[Model Settings]:::config\n        FD[Function Declarations]:::config\n        SP[System Prompts]:::config\n    end\n\n    %% Connections\n    CLI --> TM\n    API --> TM\n    TM --> PR\n    PR --> TP\n    TP --> Planners\n    Planners --> Finders\n    Finders --> AE & OE\n    \n    %% External Service Connections\n    OP & OF -.-> OAPI\n    GP & GF -.-> GAPI\n    LP & LF -.-> LAPI\n    \n    %% Platform Tool Connections\n    AE --> ADB\n    OE --> OSX\n    \n    %% Configuration Connections\n    MS -.-> TM\n    FD -.-> PR\n    SP -.-> TP\n\n    %% Click Events\n    click CLI \"https://github.com/BandarLabs/clickclickclick/blob/main/main.py\"\n    click API \"https://github.com/BandarLabs/clickclickclick/blob/main/api.py\"\n    click MS \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/config/models.yaml\"\n    click FD \"https://github.com/BandarLabs/clickclickclick/tree/main/clickclickclick/config/function_declarations\"\n    click SP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/config/prompts.yaml\"\n    click OP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/openai.py\"\n    click GP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/gemini.py\"\n    click LP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/local_ollama.py\"\n    click TP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/task.py\"\n    click OF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/openai.py\"\n    click GF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/gemini.py\"\n    click LF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/local_ollama.py\"\n    click MF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/mlx.py\"\n    click AE \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/executor/android.py\"\n    click OE \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/executor/osx.py\"\n\n    %% Styles\n    classDef input fill:#87CEEB,stroke:#333,stroke-width:2px\n    classDef core fill:#4169E1,stroke:#333,stroke-width:2px\n    classDef planner fill:#6495ED,stroke:#333,stroke-width:2px\n    classDef finder fill:#4682B4,stroke:#333,stroke-width:2px\n    classDef executor fill:#1E90FF,stroke:#333,stroke-width:2px\n    classDef external fill:#98FB98,stroke:#333,stroke-width:2px\n    classDef platform fill:#FFA500,stroke:#333,stroke-width:2px\n    classDef config fill:#D3D3D3,stroke:#333,stroke-width:2px",
+                    "explanation": 'EXPLANATION'}
+        else:
+            # ssml_string = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='en-US-AvaMultilingualNeural'>Hi The test was successfully completed, now use this place to insert actual data</voice></speak>"
+            # Assuming ssml_response is a string with multiple lines
+            filtered_ssml_response = '\n'.join(line for line in ssml_response.split('\n') if '```' not in line)
 
-        return {"diagram": processed_diagram,
-                "explanation": explanation}
+            audio_bytes = claude_service.text_to_mp3(filtered_ssml_response)
+            # mp3_bytes = convert_wav_to_mp3(audio_bytes)
+            if audio_bytes:
+                return Response(content=audio_bytes, media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=explanation.mp3"})
+            else:
+                return {"error": "Text to speech is not available. Please set Azure speech credentials in .env"}
     except RateLimitError as e:
         raise HTTPException(
             status_code=429,

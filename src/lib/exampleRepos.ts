@@ -1,4 +1,5 @@
 export const exampleRepos = {
+  Minimal: "/bmtwl/exerciseminimilism",
   FastAPI: "/fastapi/fastapi",
   Streamlit: "/streamlit/streamlit",
   Flask: "/pallets/flask",

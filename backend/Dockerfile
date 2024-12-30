@@ -1,6 +1,18 @@
 # Use Python 3.12 slim image for smaller size
 FROM python:3.12-slim
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    libasound2 \
+    libasound2-dev \
+    wget \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+
 # Set working directory
 WORKDIR /app
 

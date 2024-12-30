@@ -21,54 +21,104 @@ interface CostApiResponse {
   error?: string;
   cost?: string;
 }
+interface GenerateAudioResponse {
+    error?: string;
+    audioBlob?: Blob;
+ }
 
-export async function generateAndCacheDiagram(
-  username: string,
-  repo: string,
-  instructions?: string,
-  api_key?: string,
-): Promise<GenerateApiResponse> {
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitdiagram.com";
-    const url = new URL(`${baseUrl}/generate`);
+ export async function generateAndCacheDiagram(
+   username: string,
+   repo: string,
+   instructions?: string,
+   api_key?: string,
+   audio?: boolean
+ ): Promise<GenerateApiResponse> {
+   try {
+     const baseUrl =
+       process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitpodcast.com";
+     const url = new URL(`${baseUrl}/generate`);
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username,
-        repo,
-        instructions: instructions ?? "",
-        api_key: api_key,
-      }),
-    });
+     const response = await fetch(url, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+       },
+       body: JSON.stringify({
+         username,
+         repo,
+         instructions: instructions ?? "",
+         api_key: api_key,
+         audio: audio,
+       }),
+     });
 
-    if (response.status === 429) {
-      return { error: "Rate limit exceeded. Please try again later." };
+     if (response.status === 429) {
+       return { error: "Rate limit exceeded. Please try again later." };
+     }
+
+     const data = (await response.json()) as GenerateApiResponse;
+
+     if (data.error) {
+       return data; // pass the whole thing for multiple data fields
+     }
+
+     // Call the server action to cache the diagram
+     await cacheDiagramAndExplanation(
+       username,
+       repo,
+       data.diagram!,
+       data.explanation!,
+     );
+     return { diagram: data.diagram };
+   } catch (error) {
+     console.error("Error generating diagram:", error);
+     return { error: "Failed to generate diagram. Please try again later." };
+   }
+ }
+
+ export async function generateAudio(
+    username: string,
+   repo: string,
+   instructions?: string,
+   api_key?: string
+ ): Promise<GenerateAudioResponse> {
+   try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitpodcast.com";
+      const url = new URL(`${baseUrl}/generate`);
+
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          repo,
+          instructions: instructions ?? "",
+          api_key: api_key,
+          audio: true,
+        }),
+      });
+
+      if (response.status === 429) {
+        return { error: "Rate limit exceeded. Please try again later." };
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.error || "Failed to generate audio" };
+      }
+
+      const audioBlob = await response.blob();
+
+      return { audioBlob: audioBlob };
+    } catch (error) {
+      console.error("Error generating audio:", error);
+      return { error: "Failed to generate audio. Please try again later." };
     }
-
-    const data = (await response.json()) as GenerateApiResponse;
-
-    if (data.error) {
-      return data; // pass the whole thing for multiple data fields
-    }
-
-    // Call the server action to cache the diagram
-    await cacheDiagramAndExplanation(
-      username,
-      repo,
-      data.diagram!,
-      data.explanation!,
-    );
-    return { diagram: data.diagram };
-  } catch (error) {
-    console.error("Error generating diagram:", error);
-    return { error: "Failed to generate diagram. Please try again later." };
-  }
-}
+ }
 
 export async function modifyAndCacheDiagram(
   username: string,
@@ -85,7 +135,7 @@ export async function modifyAndCacheDiagram(
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitdiagram.com";
+      process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitpodcast.com";
     const url = new URL(`${baseUrl}/modify`);
 
     const response = await fetch(url, {
@@ -133,7 +183,7 @@ export async function getCostOfGeneration(
 ): Promise<CostApiResponse> {
   try {
     const baseUrl =
-      process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitdiagram.com";
+      process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitpodcast.com";
     const url = new URL(`${baseUrl}/generate/cost`);
 
     const response = await fetch(url, {

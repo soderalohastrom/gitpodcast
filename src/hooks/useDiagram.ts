@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getCachedDiagram } from "~/app/_actions/cache";
 import { getLastGeneratedDate } from "~/app/_actions/repo";
 import {
   generateAndCacheDiagram,
   modifyAndCacheDiagram,
   getCostOfGeneration,
+  generateAudio,
 } from "~/lib/fetch-backend";
 import { exampleRepos } from "~/lib/exampleRepos";
 
@@ -17,54 +18,8 @@ export function useDiagram(username: string, repo: string) {
   const [cost, setCost] = useState<string>("");
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [tokenCount, setTokenCount] = useState<number>(0);
-
-  const getDiagram = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    setCost("");
-    setIsRegenerating(true);
-    try {
-      const cached = await getCachedDiagram(username, repo);
-
-      if (cached) {
-        setDiagram(cached);
-        const date = await getLastGeneratedDate(username, repo);
-        setLastGenerated(date ?? undefined);
-      } else {
-        const costEstimate = await getCostOfGeneration(username, repo, ""); // empty instructions so lru cache is used
-
-        if (costEstimate.error) {
-          console.error("Cost estimation failed:", costEstimate.error);
-          setError(costEstimate.error);
-        }
-
-        setCost(costEstimate.cost ?? "");
-
-        const result = await generateAndCacheDiagram(username, repo);
-
-        if (result.error) {
-          console.error("Diagram generation failed:", result.error);
-          if (result.requires_api_key) {
-            setTokenCount(result.token_count ?? 0);
-          }
-          setError(result.error);
-        } else if (result.diagram) {
-          setDiagram(result.diagram);
-          const date = await getLastGeneratedDate(username, repo);
-          setLastGenerated(date ?? undefined);
-        }
-      }
-    } catch (error) {
-      console.error("Error in getDiagram:", error);
-      setError("Something went wrong. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  }, [username, repo]);
-
-  useEffect(() => {
-    void getDiagram();
-  }, [getDiagram]);
+  const [audioUrl, setAudioUrl] = useState("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isExampleRepo = (repoName: string): boolean => {
     return Object.values(exampleRepos).some((value) =>
@@ -98,6 +53,32 @@ export function useDiagram(username: string, repo: string) {
       setLoading(false);
     }
   };
+
+    const handleAudio = useCallback(async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const audioResult = await generateAudio(username, repo, "");
+
+            if (audioResult.error) {
+                setError(audioResult.error);
+            } else if (audioResult.audioBlob) {
+                const url = URL.createObjectURL(audioResult.audioBlob);
+                setAudioUrl(url);
+                audioRef.current?.load(); // Reload the audio element to display the player correctly
+            }
+        } catch (error) {
+            console.error("Error generating audio:", error);
+            setError("Failed to generate audio. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+    }, [username, repo]); // Add dependencies
+
+    useEffect(() => {
+        void handleAudio();
+    }, [handleAudio]); // Re-run the effect if handleAudio changes
+
 
   const handleRegenerate = async (instructions: string) => {
     if (isExampleRepo(repo)) {
@@ -193,5 +174,8 @@ export function useDiagram(username: string, repo: string) {
     handleApiKeySubmit,
     handleCloseApiKeyDialog,
     handleOpenApiKeyDialog,
+    handleAudio,
+    audioUrl,
+    audioRef
   };
 }

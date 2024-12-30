@@ -1,19 +1,18 @@
-[![Image](./docs/readme_img.png "GitDiagram Front Page")](https://gitdiagram.com/)
+[![Image](./docs/readme_img.png "GitPodcast Front Page")](https://gitpodcast.com/)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-# GitDiagram
+# GitPodcast
 
-Turn any GitHub repository into an interactive diagram for visualization in seconds.
+Turn any GitHub repository into an engaging podcast in seconds.
 
-You can also replace `hub` with `diagram` in any Github URL to access its diagram.
+You can also replace `hub` with `podcast` in any Github URL to access its podcast.
 
 ## 🚀 Features
 
-- 👀 **Instant Visualization**: Convert any GitHub repository structure into a system design / architecture diagram
-- 🎨 **Interactivity**: Click on components to navigate directly to source files and relevant directories
-- ⚡ **Fast Generation**: Powered by Claude 3.5 Sonnet for quick and accurate diagrams
-- 🔄 **Customization**: Modify and regenerate diagrams with custom instructions
+- 👀 **Instant Podcast**: Convert any GitHub repository structure into a podcast
+- 🎨 **Customization**: Choose Voices (WIP)
+- ⚡ **Fast Generation**: Powered by OpenAI and Azure Speech SDK
 - 🌐 **API Access**: Public API available for integration (WIP)
 
 ## ⚙️ Tech Stack
@@ -21,7 +20,7 @@ You can also replace `hub` with `diagram` in any Github URL to access its diagra
 - **Frontend**: Next.js, TypeScript, Tailwind CSS, ShadCN
 - **Backend**: FastAPI, Python, Server Actions
 - **Database**: PostgreSQL (with Drizzle ORM)
-- **AI**: Claude 3.5 Sonnet
+- **AI**: OpenAI 4o / Azure Speech
 - **Deployment**: Vercel (Frontend), EC2 (Backend)
 - **CI/CD**: GitHub Actions
 - **Analytics**: PostHog, Api-Analytics
@@ -31,8 +30,8 @@ You can also replace `hub` with `diagram` in any Github URL to access its diagra
 1. Clone the repository
 
 ```bash
-git clone https://github.com/ahmedkhaleel2004/gitdiagram.git
-cd gitdiagram
+git clone https://github.com/BandarLabs/gitpodcast.git
+cd gitpodcast
 ```
 
 2. Install dependencies
@@ -90,20 +89,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgements
 
-Shoutout to [Romain Courtois](https://github.com/cyclotruc)'s [Gitingest](https://gitingest.com/) for inspiration and styling
+Shoutout to [Romain Courtois/Ahmed Khalil]'s [Gitingest/Gitdiagram](https://gitingest.com/)  [Gitdiagram](https://gitdiagram.com/) for inspiration and styling
 
 ## 📈 Rate Limits
 
 I am currently hosting it for free with the following rate limits. If you would like to bypass these, self-hosting instructions are provided. I also plan on adding an input for your own Anthropic API key.
 
-Diagram generation:
+Podcast generation:
 
 - 1 request per minute
 - 5 requests per day
 
 ## 🤔 Future Steps
 
-- Can use cheaper, larger context models like Gemini 1206
-- Allow user to enter Anthropic API Key for use at own cost
-- Implement RAG with Mermaid.js docs
-- Implement font-awesome icons in diagram
+- Allow user to choose Voices
+- Remove dependence on Anthopic of token count
+- Give a download button
+- Allow user prompts

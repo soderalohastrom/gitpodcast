@@ -7,19 +7,19 @@ import { Footer } from "~/components/footer";
 import { CSPostHogProvider } from "./providers";
 
 export const metadata: Metadata = {
-  title: "GitDiagram",
+  title: "GitPodcast",
   description:
-    "Turn any GitHub repository into an interactive diagram for visualization in seconds.",
-  metadataBase: new URL("https://gitdiagram.com"),
+    "Turn any GitHub repository into an engaging podcast in seconds.",
+  metadataBase: new URL("https://gitpodcast.com"),
   keywords: [
     "github",
-    "git diagram",
-    "git diagram generator",
-    "git diagram tool",
-    "git diagram maker",
-    "git diagram creator",
-    "git diagram",
-    "diagram",
+    "git podcast",
+    "git podcast generator",
+    "git podcast tool",
+    "git podcast maker",
+    "git podcast creator",
+    "git podcast",
+    "podcast",
     "repository",
     "visualization",
     "code structure",
@@ -36,27 +36,27 @@ export const metadata: Metadata = {
     "open source software",
     "ahmedkhaleel2004",
     "ahmed khaleel",
-    "gitdiagram",
-    "gitdiagram.com",
+    "gitpodcast",
+    "gitpodcast.com",
   ],
   authors: [
-    { name: "Ahmed Khaleel", url: "https://github.com/ahmedkhaleel2004" },
+    { name: "", url: "https://github.com/BandarLabs" },
   ],
-  creator: "Ahmed Khaleel",
+  creator: "BandarLabs",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://gitdiagram.com",
-    title: "GitDiagram - Repository to Diagram in Seconds",
+    url: "https://gitpodcast.com",
+    title: "GitPodcast - Repository to Podcast in Seconds",
     description:
-      "Turn any GitHub repository into an interactive diagram for visualization.",
+      "Turn any GitHub repository into an engaging podcast in seconds.",
     siteName: "GitDiagram",
     images: [
       {
         url: "/og-image.png", // You'll need to create this image
         width: 1200,
         height: 630,
-        alt: "GitDiagram - Repository Visualization Tool",
+        alt: "GitPodcast - Repository Podcaster Tool",
       },
     ],
   },

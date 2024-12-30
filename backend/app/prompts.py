@@ -12,6 +12,7 @@
 # Note: Originally prompt1 and prompt2 were combined - but I tested it, and turns out mapping relevant dirs and files in one prompt along with generating detailed and accurate diagrams was difficult for Claude 3.5 Sonnet. It lost detail in the explanation and dedicated more "effort" to the mappings, so this is now its own prompt.
 
 # This is my first take at prompt engineering so if you have any ideas on optimizations please make an issue on the GitHub!
+PODCAST_SSML_PROMPT = """Can you convert it into a podcast so that someone could listen to it and understand what's going on - make it a ssml similar to this: <speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\">\n<voice name=\"en-US-AvaMultilingualNeural\">\nWelcome to Next Gen Innovators!  (no need to open links) .. also make it a conversation between host and guest of a podcast, question answer kind. \n\n<break time=\"500ms\" />\nI’m your host, Ava, and today we’re diving into an exciting topic: how students can embark on their entrepreneurial journey right from college.\n<break time=\"700ms\" />\nJoining us is Arun Sharma, a seasoned entrepreneur with over two decades of experience and a passion for mentoring young innovators.\n<break time=\"500ms\" />\nArun, it’s a pleasure to have you here.\n</voice>\n\n<voice name=\"en-US-BrianMultilingualNeural\">\n    Thank you, Ava.\n    <break time=\"300ms\" />\n    It’s great to be here. I’m excited to talk about how students can channel their creativity and energy into building impactful ventures.\n</voice> ..\n", Use Andrew or Derek or Ryan  voices as guest (and must use en-US-AvaMultilingualNeural voice as host always but her actual name can be something else)"""
 
 SYSTEM_FIRST_PROMPT = """
 You are tasked with explaining to a principal software engineer how to draw the best and most accurate system design diagram / architecture of a given project. This explanation should be tailored to the specific project's purpose and structure. To accomplish this, you will be provided with two key pieces of information:
@@ -94,7 +95,7 @@ Now, provide your final answer in the following format:
 [Continue for all identified components]
 </component_mapping>
 
-Remember to be as specific as possible in your mappings, only use what is given to you from the file tree, and to strictly follow the components mentioned in the explanation. 
+Remember to be as specific as possible in your mappings, only use what is given to you from the file tree, and to strictly follow the components mentioned in the explanation.
 """
 
 # just adding some clear separation between the prompts
@@ -148,7 +149,7 @@ Do not include an init declaration such as `%%{init: {'key':'etc'}}%%`. This is 
 Your response must strictly be just the Mermaid.js code, without any additional text or explanations.
 No code fence or markdown ticks needed, simply return the Mermaid.js code.
 
-Ensure that your diagram adheres strictly to the given explanation, without adding or omitting any significant components or relationships. 
+Ensure that your diagram adheres strictly to the given explanation, without adding or omitting any significant components or relationships.
 
 Important notes on syntax:
 - In Mermaid.js syntax, we cannot include slashes without being inside quotes. For example: `EX[/api/process]:::api` is a syntax error but `EX["/api/process"]:::api` is valid.

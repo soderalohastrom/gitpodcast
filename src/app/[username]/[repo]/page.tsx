@@ -8,8 +8,21 @@ import { useDiagram } from "~/hooks/useDiagram";
 import { ApiKeyDialog } from "~/components/api-key-dialog";
 import { Button } from "~/components/ui/button";
 import { ApiKeyButton } from "~/components/api-key-button";
+import React, { useState } from 'react';
+
+import WavesurferPlayer from '@wavesurfer/react'
 
 export default function Repo() {
+    const [wavesurfer, setWavesurfer] = useState(null)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const onReady = (ws) => {
+        setWavesurfer(ws)
+        setIsPlaying(false)
+    }
+    const onPlayPause = () => {
+        wavesurfer && wavesurfer.playPause()
+    }
+
   const params = useParams<{ username: string; repo: string }>();
   const {
     diagram,
@@ -26,7 +39,11 @@ export default function Repo() {
     handleApiKeySubmit,
     handleCloseApiKeyDialog,
     handleOpenApiKeyDialog,
+    handleAudio,
+    audioUrl,
+    audioRef
   } = useDiagram(params.username, params.repo);
+
 
   return (
     <div className="flex min-h-screen flex-col items-center p-4">
@@ -66,9 +83,42 @@ export default function Repo() {
           </div>
         ) : (
           <div className="flex w-full justify-center px-4">
-            <MermaidChart chart={diagram} />
+
+              {/* <Button
+                  onClick={handleAudio}
+                  className="border-[3px] border-black bg-purple-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-purple-300"
+              >
+                Download Explanation Audio
+              </Button> */}
+              {audioUrl ? (<>
+
+              <WavesurferPlayer
+                height={100}
+                width={240}
+                waveColor="violet"
+                url={audioUrl}
+                onReady={onReady}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+            />
+            <div style={{ width: "10px" }}></div>
+            <div className="py-4">
+                <button onClick={onPlayPause} className="border-[3px] rounded-md font-medium border-black bg-orange-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-orange-300">
+                    {isPlaying ? 'Pause' : 'Play'}
+                </button>
+            </div>
+            </>
+            ) : (
+              <Button
+                onClick={handleAudio}
+                className="border-[3px] border-black bg-orange-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-orange-300"
+              >
+                Play Explanation Audio
+              </Button>
+            )}
           </div>
         )}
+
       </div>
 
       <ApiKeyDialog

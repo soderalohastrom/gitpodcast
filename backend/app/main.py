@@ -15,7 +15,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://gitdiagram.com"
+    "https://gitpodcast.com"
 ]
 
 app.add_middleware(

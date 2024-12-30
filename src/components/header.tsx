@@ -22,21 +22,21 @@ export async function Header() {
             <span className="text-black transition-colors duration-200 hover:text-gray-600">
               Git
             </span>
-            <span className="text-purple-600 transition-colors duration-200 hover:text-purple-500">
-              Diagram
+            <span className="text-orange-600 transition-colors duration-200 hover:text-orange-500">
+              Podcast
             </span>
           </span>
         </Link>
         <nav className="flex items-center gap-6">
           <Link
-            href="https://api.gitdiagram.com"
-            className="text-sm font-medium text-black transition-transform hover:translate-y-[-2px] hover:text-purple-600"
+            href="https://api.gitpodcast.com"
+            className="text-sm font-medium text-black transition-transform hover:translate-y-[-2px] hover:text-orange-600"
           >
             API
           </Link>
           <Link
-            href="https://github.com/ahmedkhaleel2004/gitdiagram"
-            className="flex items-center gap-2 text-sm font-medium text-black transition-transform hover:translate-y-[-2px] hover:text-purple-600"
+            href="https://github.com/BandarLabs/gitpodcast"
+            className="flex items-center gap-2 text-sm font-medium text-black transition-transform hover:translate-y-[-2px] hover:text-orange-600"
           >
             <FaGithub className="h-5 w-5" />
             GitHub

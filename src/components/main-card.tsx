@@ -66,11 +66,12 @@ export default function MainCard({
 
   const handleExampleClick = (repoPath: string, e: React.MouseEvent) => {
     e.preventDefault();
+    console.log(repoPath);
     router.push(repoPath);
   };
 
   return (
-    <Card className="relative w-full max-w-3xl border-[3px] border-black bg-purple-200 p-4 shadow-[8px_8px_0_0_#000000] sm:p-8">
+    <Card className="relative w-full max-w-3xl border-[3px] border-black bg-orange-200 p-4 shadow-[8px_8px_0_0_#000000] sm:p-8">
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Input
@@ -82,9 +83,9 @@ export default function MainCard({
           />
           <Button
             type="submit"
-            className="border-[3px] border-black bg-purple-400 p-4 px-4 text-base text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:transform hover:bg-purple-400 sm:p-6 sm:px-6 sm:text-lg"
+            className="border-[3px] border-black bg-orange-400 p-4 px-4 text-base text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:transform hover:bg-orange-400 sm:p-6 sm:px-6 sm:text-lg"
           >
-            Diagram
+            Podcast
           </Button>
         </div>
 
@@ -114,7 +115,7 @@ export default function MainCard({
                 <Button
                   key={name}
                   variant="outline"
-                  className="border-2 border-black bg-purple-400 text-sm text-black transition-transform hover:-translate-y-0.5 hover:transform hover:bg-purple-300 sm:text-base"
+                  className="border-2 border-black bg-orange-400 text-sm text-black transition-transform hover:-translate-y-0.5 hover:transform hover:bg-orange-300 sm:text-base"
                   onClick={(e) => handleExampleClick(path, e)}
                 >
                   {name}
