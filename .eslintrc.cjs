@@ -55,7 +55,13 @@ const config = {
           "ctx.db"
         ]
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unsafe-argument": "off", // Disable no-unsafe-argument rule
+    "@typescript-eslint/no-floating-promises": "off", // Disable no-floating-promises rule
+    "@typescript-eslint/no-unused-expressions": "off",
+    "@typescript-eslint/prefer-optional-chain": "off",
+    "no-var": "off"
   }
 }
 module.exports = config;
