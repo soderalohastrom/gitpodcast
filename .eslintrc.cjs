@@ -61,6 +61,8 @@ const config = {
     "@typescript-eslint/no-floating-promises": "off", // Disable no-floating-promises rule
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/prefer-optional-chain": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
     "no-var": "off"
   }
 }
