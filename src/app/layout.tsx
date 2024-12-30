@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: "GitDiagram",
     images: [
       {
-        url: "/og-image.png", // You'll need to create this image
+        url: "/og-image.png?v=2", // You'll need to create this image
         width: 1200,
         height: 630,
         alt: "GitPodcast - Repository Podcaster Tool",
