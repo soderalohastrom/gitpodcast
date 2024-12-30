@@ -9,13 +9,13 @@ import { ApiKeyDialog } from "~/components/api-key-dialog";
 import { Button } from "~/components/ui/button";
 import { ApiKeyButton } from "~/components/api-key-button";
 import React, { useState } from 'react';
-
-import WavesurferPlayer from '@wavesurfer/react'
+import WavesurferPlayer  from '@wavesurfer/react'
+import WaveSurfer from '@types/wavesurfer.js';
 
 export default function Repo() {
-    const [wavesurfer, setWavesurfer] = useState(null)
+    const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
     const [isPlaying, setIsPlaying] = useState(false)
-    const onReady = (ws) => {
+    const onReady = (ws: any) => {
         setWavesurfer(ws)
         setIsPlaying(false)
     }

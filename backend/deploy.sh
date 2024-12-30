@@ -4,7 +4,7 @@
 set -e
 
 # Navigate to project directory
-cd ~/gitdiagram
+cd ~/gitpodcast
 
 # Pull latest changes
 git pull origin main
