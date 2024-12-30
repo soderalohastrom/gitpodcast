@@ -129,7 +129,7 @@ export default function MainCard({
       {/* Decorative Sparkle */}
       <div className="absolute -bottom-8 -left-12 hidden sm:block">
         <Sparkles
-          className="h-20 w-20 fill-sky-400 text-black"
+          className="h-20 w-20 fill-yellow-400 text-black"
           strokeWidth={0.6}
           style={{ transform: "rotate(-15deg)" }}
         />
