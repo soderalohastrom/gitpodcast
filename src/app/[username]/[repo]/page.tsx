@@ -8,7 +8,7 @@ import { useDiagram } from "~/hooks/useDiagram";
 import { ApiKeyDialog } from "~/components/api-key-dialog";
 import { Button } from "~/components/ui/button";
 import { ApiKeyButton } from "~/components/api-key-button";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import WavesurferPlayer  from '@wavesurfer/react'
 import WaveSurfer from 'wavesurfer.js';
 
@@ -18,13 +18,28 @@ export default function Repo() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [gradient, setGradient] = useState<CanvasGradient | null>(null);
     const [progressGradient, setProgressGradient] = useState<CanvasGradient | null>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const subtitleRef = useRef<HTMLDivElement>(null);
+
+
 
     const onReady = (ws: any) => {
         setWavesurfer(ws)
         setIsPlaying(false)
     }
     const onPlayPause = () => {
+
+
+        if(isPlaying) {
+            videoRef.current?.pause();
+        } else {
+            videoRef.current?.play();
+            console.log("now playing")
+        }
+
         wavesurfer && wavesurfer.playPause()
+
+
     }
 
     useEffect(() => {
@@ -80,7 +95,8 @@ export default function Repo() {
     handleOpenApiKeyDialog,
     handleAudio,
     audioUrl,
-    audioRef
+    audioRef,
+    subtitleUrl
   } = useDiagram(params.username, params.repo);
 
 
@@ -130,7 +146,7 @@ export default function Repo() {
                 Download Explanation Audio
               </Button> */}
               {audioUrl ? (<>
-
+            {/* <div>
               <WavesurferPlayer
                 height={100}
                 width={240}
@@ -147,6 +163,13 @@ export default function Repo() {
                 <button onClick={onPlayPause} className="border-[3px] rounded-md font-medium border-black bg-orange-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-orange-300">
                     {isPlaying ? 'Pause' : 'Play'}
                 </button>
+            </div>
+            </div> */}
+            <div>
+                <video ref={videoRef} id="audioVideo"  height={240} width={350} controls crossOrigin="anonymous">
+                    <source src={audioUrl} type="audio/mp3" />
+                    <track src={subtitleUrl} kind="subtitles" label="English" srcLang="en" default/>
+                </video>
             </div>
             </>
             ) : (

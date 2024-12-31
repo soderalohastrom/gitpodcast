@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from functools import lru_cache
 import re
 from tempfile import NamedTemporaryFile
+import base64
 
 load_dotenv()
 
@@ -44,6 +45,57 @@ class ApiRequest(BaseModel):
     instructions: str
     api_key: str | None = None
     audio: bool = False  # new param
+
+def calculate_duration(text_line, wpm=130):
+    words = len(text_line.split())
+    minutes = words / wpm
+    seconds = minutes * 60
+    return seconds
+
+def ssml_to_webvtt(ssml_content, max_line_length=60):
+    # Helper function to insert line breaks at appropriate places
+    def add_line_breaks(text, max_length):
+        words = text.split()
+        lines, current_line = [], ""
+        for word in words:
+            # Check if adding the next word exceeds the length limit
+            if len(current_line) + len(word) + 1 > max_length:
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line += (" " if current_line else "") + word
+        if current_line:  # Add the remainder of the text if any
+            lines.append(current_line)
+        return "\n".join(lines)
+
+    # Step 1: Extract text from SSML, remove specific tags, and empty lines
+    text_content = re.sub(r'<speak[^>]*>|</speak>|<break[^>]*>', '', ssml_content)
+    text_content = re.sub(r'<voice[^>]*>', '\n\n', text_content)
+    text_content = re.sub(r'</voice>', '', text_content)
+    text_lines = filter(None, [line.strip() for line in text_content.splitlines()])
+
+    # Step 2: Generate WebVTT content with sequential timestamps
+    vtt_content = "WEBVTT\n\n"
+    cumulative_time = 0.0
+    for i, line in enumerate(text_lines):
+        formatted_line = add_line_breaks(line.strip(), max_line_length)
+        duration = calculate_duration(formatted_line)
+        start_time = cumulative_time
+        end_time = start_time + duration
+        cumulative_time = end_time  # Update cumulative time for next line
+
+        # Convert seconds to VTT timestamp format (HH:MM:SS.mmm)
+        def seconds_to_timestamp(seconds):
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            seconds = seconds % 60
+            return f"{hours:02}:{minutes:02}:{seconds:06.3f}"
+
+        vtt_content += f"{i+1}\n"
+        vtt_content += f"{seconds_to_timestamp(start_time)} --> {seconds_to_timestamp(end_time)} line:5% align:center\n"
+        vtt_content += f"{formatted_line}\n\n"
+
+    return vtt_content
 
 
 @router.post("")
@@ -101,70 +153,6 @@ async def generate(request: Request, body: ApiRequest):
             # Clean up the temporary file
             os.remove(temp_file_path)
 
-        # # Prepare system prompts with instructions if provided
-        # first_system_prompt = SYSTEM_FIRST_PROMPT
-        # third_system_prompt = SYSTEM_THIRD_PROMPT
-        # if body.instructions:
-        #     first_system_prompt = first_system_prompt + \
-        #         "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
-        #     third_system_prompt = third_system_prompt + \
-        #         "\n" + ADDITIONAL_SYSTEM_INSTRUCTIONS_PROMPT
-
-        # # get the explanation for sysdesign from claude
-        # explanation = claude_service.call_claude_api(
-        #     system_prompt=first_system_prompt,
-        #     data={
-        #         "file_tree": file_tree,
-        #         "readme": readme,
-        #         "instructions": body.instructions
-        #     },
-        #     api_key=body.api_key
-        # )
-
-        # Needs temp file from str
-        # so that path can be passed to ssml_response = call_gemini_flash_for_ssml(file_paths, ssml_prompt)
-
-        # Check for BAD_INSTRUCTIONS response
-        # if "BAD_INSTRUCTIONS" in explanation:
-        #     return {"error": "Invalid or unclear instructions provided"}
-
-        # full_second_response = claude_service.call_claude_api(
-        #     system_prompt=SYSTEM_SECOND_PROMPT,
-        #     data={
-        #         "explanation": explanation,
-        #         "file_tree": file_tree
-        #     }
-        # )
-
-        # Extract component mapping from the response
-        # start_tag = "<component_mapping>"
-        # end_tag = "</component_mapping>"
-        # component_mapping_text = full_second_response[
-        #     full_second_response.find(start_tag):
-        #     full_second_response.find(end_tag)
-        # ]
-
-        # get mermaid.js code from claude
-        # mermaid_code = claude_service.call_claude_api(
-        #     system_prompt=third_system_prompt,
-        #     data={
-        #         "explanation": explanation,
-        #         "component_mapping": component_mapping_text,
-        #         "instructions": body.instructions
-        #     }
-        # )
-
-        # # Check for BAD_INSTRUCTIONS response
-        # if "BAD_INSTRUCTIONS" in mermaid_code:
-        #     return {"error": "Invalid or unclear instructions provided"}
-
-        # # Process click events to include full GitHub URLs
-        # processed_diagram = process_click_events(
-        #     mermaid_code,
-        #     body.username,
-        #     body.repo,
-        #     default_branch
-        # )
         if not body.audio:
             return {"diagram": "flowchart TB\n    subgraph Input\n        CLI[CLI Interface]:::input\n        API[API Interface]:::input\n    end\n\n    subgraph Orchestration\n        TM[Task Manager]:::core\n        PR[Platform Router]:::core\n    end\n\n    subgraph \"Planning Layer\"\n        TP[Task Planning]:::core\n        subgraph Planners\n            OP[OpenAI Planner]:::planner\n            GP[Gemini Planner]:::planner\n            LP[Local Ollama Planner]:::planner\n        end\n    end\n\n    subgraph \"Finding Layer\"\n        subgraph Finders\n            OF[OpenAI Finder]:::finder\n            GF[Gemini Finder]:::finder\n            LF[Local Ollama Finder]:::finder\n            MF[MLX Finder]:::finder\n        end\n    end\n\n    subgraph \"Execution Layer\"\n        AE[Android Executor]:::executor\n        OE[OSX Executor]:::executor\n    end\n\n    subgraph \"External Services\"\n        direction TB\n        OAPI[OpenAI API]:::external\n        GAPI[Google Gemini API]:::external\n        LAPI[Local Ollama Instance]:::external\n    end\n\n    subgraph \"Platform Tools\"\n        direction TB\n        ADB[Android Debug Bridge]:::platform\n        OSX[OSX System Tools]:::platform\n    end\n\n    subgraph \"Configuration\"\n        direction TB\n        MS[Model Settings]:::config\n        FD[Function Declarations]:::config\n        SP[System Prompts]:::config\n    end\n\n    %% Connections\n    CLI --> TM\n    API --> TM\n    TM --> PR\n    PR --> TP\n    TP --> Planners\n    Planners --> Finders\n    Finders --> AE & OE\n    \n    %% External Service Connections\n    OP & OF -.-> OAPI\n    GP & GF -.-> GAPI\n    LP & LF -.-> LAPI\n    \n    %% Platform Tool Connections\n    AE --> ADB\n    OE --> OSX\n    \n    %% Configuration Connections\n    MS -.-> TM\n    FD -.-> PR\n    SP -.-> TP\n\n    %% Click Events\n    click CLI \"https://github.com/BandarLabs/clickclickclick/blob/main/main.py\"\n    click API \"https://github.com/BandarLabs/clickclickclick/blob/main/api.py\"\n    click MS \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/config/models.yaml\"\n    click FD \"https://github.com/BandarLabs/clickclickclick/tree/main/clickclickclick/config/function_declarations\"\n    click SP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/config/prompts.yaml\"\n    click OP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/openai.py\"\n    click GP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/gemini.py\"\n    click LP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/local_ollama.py\"\n    click TP \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/planner/task.py\"\n    click OF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/openai.py\"\n    click GF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/gemini.py\"\n    click LF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/local_ollama.py\"\n    click MF \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/finder/mlx.py\"\n    click AE \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/executor/android.py\"\n    click OE \"https://github.com/BandarLabs/clickclickclick/blob/main/clickclickclick/executor/osx.py\"\n\n    %% Styles\n    classDef input fill:#87CEEB,stroke:#333,stroke-width:2px\n    classDef core fill:#4169E1,stroke:#333,stroke-width:2px\n    classDef planner fill:#6495ED,stroke:#333,stroke-width:2px\n    classDef finder fill:#4682B4,stroke:#333,stroke-width:2px\n    classDef executor fill:#1E90FF,stroke:#333,stroke-width:2px\n    classDef external fill:#98FB98,stroke:#333,stroke-width:2px\n    classDef platform fill:#FFA500,stroke:#333,stroke-width:2px\n    classDef config fill:#D3D3D3,stroke:#333,stroke-width:2px",
                     "explanation": 'EXPLANATION'}
@@ -176,7 +164,14 @@ async def generate(request: Request, body: ApiRequest):
             audio_bytes = claude_service.text_to_mp3(filtered_ssml_response)
             # mp3_bytes = convert_wav_to_mp3(audio_bytes)
             if audio_bytes:
-                return Response(content=audio_bytes, media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=explanation.mp3"})
+                response = Response(content=audio_bytes, media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=explanation.mp3"})
+                vtt_content = ssml_to_webvtt(filtered_ssml_response)
+                encoded_vtt_content = base64.b64encode(vtt_content.encode('utf-8')).decode('utf-8')
+                response.headers["X-VTT-Content"] = encoded_vtt_content
+                # Add CORS headers
+                response.headers["Access-Control-Expose-Headers"] = "X-VTT-Content"
+
+                return response
             else:
                 return {"error": "Text to speech is not available. Please set Azure speech credentials in .env"}
     except RateLimitError as e:

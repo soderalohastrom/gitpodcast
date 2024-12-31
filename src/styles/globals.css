@@ -64,3 +64,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+video {
+    border: 1px solid #aaaaaa00;
+    object-fit: initial;
+ }
+ ::cue {
+    font-size: 12px;
+ }

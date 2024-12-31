@@ -1,0 +1,17 @@
+WEBVTT
+
+1
+00:00:00.960 --> 00:00:03.000 line:90% align:center
+This will be center aligned just above the player
+
+2
+00:00:03.002 --> 00:00:05.000 line:5% align:center
+This will be center aligned at the top of the video.
+
+3
+00:00:05.002 --> 00:00:30.000 line:5% align:center
+ttThis will be center aligned at the top of the video.
+
+4
+00:00:30.002 --> 00:00:50.000 line:5% align:center
+tt333This will be center aligned at the top of the video.

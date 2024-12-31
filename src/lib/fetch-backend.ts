@@ -24,6 +24,7 @@ interface CostApiResponse {
 interface GenerateAudioResponse {
     error?: string;
     audioBlob?: Blob;
+    vtt?: string;
  }
 
  export async function generateAndCacheDiagram(
@@ -112,8 +113,10 @@ interface GenerateAudioResponse {
       }
 
       const audioBlob = await response.blob();
+      const vttContent = response.headers.get("x-vtt-content");
+      console.log(vttContent + " vtt content");
 
-      return { audioBlob: audioBlob };
+      return { audioBlob: audioBlob,  vtt: vttContent ?? '' };
     } catch (error) {
       console.error("Error generating audio:", error);
       return { error: "Failed to generate audio. Please try again later." };

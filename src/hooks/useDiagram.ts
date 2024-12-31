@@ -19,6 +19,7 @@ export function useDiagram(username: string, repo: string) {
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [tokenCount, setTokenCount] = useState<number>(0);
   const [audioUrl, setAudioUrl] = useState("");
+  const [subtitleUrl, setSubtitleUrl] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isExampleRepo = (repoName: string): boolean => {
@@ -65,6 +66,21 @@ export function useDiagram(username: string, repo: string) {
             } else if (audioResult.audioBlob) {
                 const url = URL.createObjectURL(audioResult.audioBlob);
                 setAudioUrl(url);
+                console.log(audioResult.vtt);
+                if (audioResult.vtt) {
+                    // Decode the base64 content back to a text string
+
+                    const decodedVtt = atob(audioResult.vtt);
+                    console.log(decodedVtt);
+                    // Create a Blob with the decoded VTT content
+                    const vttBlob = new Blob([decodedVtt], { type: 'text/vtt' });
+
+                    // Create a URL for the Blob
+                    const vttUrl = URL.createObjectURL(vttBlob);
+
+                    // Use the vttUrl as needed, e.g., setting it to a video element's track source
+                    setSubtitleUrl(vttUrl);
+                }
                 audioRef.current?.load(); // Reload the audio element to display the player correctly
             }
         } catch (error) {
@@ -176,6 +192,7 @@ export function useDiagram(username: string, repo: string) {
     handleOpenApiKeyDialog,
     handleAudio,
     audioUrl,
-    audioRef
+    audioRef,
+    subtitleUrl
   };
 }
