@@ -14,6 +14,7 @@ You can also replace `hub` with `podcast` in any Github URL to access its podcas
 - 🎨 **Customization**: Choose Voices (WIP)
 - ⚡ **Fast Generation**: Powered by OpenAI and Azure Speech SDK
 - 🌐 **API Access**: Public API available for integration (WIP)
+- 💰**Cost Effective**: Free (via Gemini Flash + Azure Speech SDK)
 
 ## ⚙️ Tech Stack
 
@@ -46,7 +47,9 @@ pnpm i
 cp .env.example .env
 ```
 
-Then edit the `.env` file with your Anthropic API key and optional GitHub personal access token.
+Then edit the `.env` file with your OpenAI API key for SSML and Azure AI Speech Key for TTS (https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/).
+
+You can also use `Gemini Flash` for the SSML. You will need to change the code from `OpenAIService` to `GeminiService`.
 
 4. Run backend
 
@@ -89,20 +92,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgements
 
-Shoutout to [Romain Courtois/Ahmed Khalil]'s [Gitingest/Gitdiagram](https://gitingest.com/)  [Gitdiagram](https://gitdiagram.com/) for inspiration and styling
+Shoutout to [Romain Courtois/Ahmed Khalil]'s [Gitingest](https://gitingest.com/) and [Gitdiagram](https://gitdiagram.com/) for inspiration and styling
 
 ## 📈 Rate Limits
 
-I am currently hosting it for free with the following rate limits. If you would like to bypass these, self-hosting instructions are provided. I also plan on adding an input for your own Anthropic API key.
+I am currently hosting it for free with the following rate limits. If you would like to bypass these, self-hosting instructions are provided. I also plan on adding an input for your own OpenAI API key.
 
 Podcast generation:
 
-- 1 request per minute
-- 5 requests per day
+- 15 API calls/minute via Gemini Flash Exp. 2.0 for Github -> SSML
+- 0.5 million characters for SSML -> Speech (via Azure Speech Service)
+
 
 ## 🤔 Future Steps
 
 - Allow user to choose Voices
 - Remove dependence on Anthopic of token count
-- Give a download button
 - Allow user prompts
