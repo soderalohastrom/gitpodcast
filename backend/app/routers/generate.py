@@ -170,7 +170,7 @@ async def generate(request: Request, body: ApiRequest):
                 response.headers["X-VTT-Content"] = encoded_vtt_content
                 # Add CORS headers
                 response.headers["Access-Control-Expose-Headers"] = "X-VTT-Content"
-
+                response.headers["Access-Control-Allow-Origin"] = "*"
                 return response
             else:
                 return {"error": "Text to speech is not available. Please set Azure speech credentials in .env"}
