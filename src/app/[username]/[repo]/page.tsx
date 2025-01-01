@@ -139,39 +139,14 @@ export default function Repo() {
         ) : (
           <div className="flex w-full justify-center px-4">
 
-              {/* <Button
-                  onClick={handleAudio}
-                  className="border-[3px] border-black bg-purple-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-purple-300"
-              >
-                Download Explanation Audio
-              </Button> */}
-              {audioUrl ? (<>
-            {/* <div>
-              <WavesurferPlayer
-                height={100}
-                width={240}
-                waveColor={gradient ?? '#000000'}
-                url={audioUrl}
-                onReady={onReady}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                barWidth={2}
-                progressColor={progressGradient ?? '#555555'}
-            />
-            <div style={{ width: "10px" }}></div>
-            <div className="py-4">
-                <button onClick={onPlayPause} className="border-[3px] rounded-md font-medium border-black bg-orange-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-orange-300">
-                    {isPlaying ? 'Pause' : 'Play'}
-                </button>
-            </div>
-            </div> */}
+              {audioUrl ? (
             <div>
-                <video ref={videoRef} id="audioVideo"  height={240} width={350} controls crossOrigin="anonymous">
+                <video ref={videoRef} id="audioVideo"  height={360} width={380} controls crossOrigin="anonymous">
                     <source src={audioUrl} type="audio/mp3" />
                     <track src={subtitleUrl} kind="subtitles" label="English" srcLang="en" default/>
                 </video>
             </div>
-            </>
+
             ) : (
               <Button
                 onClick={handleAudio}

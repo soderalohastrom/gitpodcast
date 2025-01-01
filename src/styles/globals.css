@@ -70,5 +70,6 @@ video {
     object-fit: initial;
  }
  ::cue {
-    font-size: 12px;
+    font-size: 2em;
+
  }

@@ -46,13 +46,13 @@ class ApiRequest(BaseModel):
     api_key: str | None = None
     audio: bool = False  # new param
 
-def calculate_duration(text_line, wpm=130):
+def calculate_duration(text_line, wpm=135):
     words = len(text_line.split())
     minutes = words / wpm
     seconds = minutes * 60
     return seconds
 
-def ssml_to_webvtt(ssml_content, max_line_length=60):
+def ssml_to_webvtt(ssml_content, max_line_length=45, max_words_per_cue=30):
     # Helper function to insert line breaks at appropriate places
     def add_line_breaks(text, max_length):
         words = text.split()
@@ -77,23 +77,36 @@ def ssml_to_webvtt(ssml_content, max_line_length=60):
     # Step 2: Generate WebVTT content with sequential timestamps
     vtt_content = "WEBVTT\n\n"
     cumulative_time = 0.0
+    cue_index = 0
+
     for i, line in enumerate(text_lines):
-        formatted_line = add_line_breaks(line.strip(), max_line_length)
-        duration = calculate_duration(formatted_line)
-        start_time = cumulative_time
-        end_time = start_time + duration
-        cumulative_time = end_time  # Update cumulative time for next line
 
-        # Convert seconds to VTT timestamp format (HH:MM:SS.mmm)
-        def seconds_to_timestamp(seconds):
-            hours = int(seconds // 3600)
-            minutes = int((seconds % 3600) // 60)
-            seconds = seconds % 60
-            return f"{hours:02}:{minutes:02}:{seconds:06.3f}"
+        # Break the line if it's too long into sub-lines based on word count
+        words = line.split()
+        sub_lines = []
+        for j in range(0, len(words), max_words_per_cue):
+            sub_line = ' '.join(words[j:j + max_words_per_cue])
+            sub_lines.append(sub_line)
 
-        vtt_content += f"{i+1}\n"
-        vtt_content += f"{seconds_to_timestamp(start_time)} --> {seconds_to_timestamp(end_time)} line:5% align:center\n"
-        vtt_content += f"{formatted_line}\n\n"
+        # Generate VTT for each sub-line
+        for sub_line in sub_lines:
+            duration = calculate_duration(sub_line)
+            start_time = cumulative_time
+            end_time = start_time + duration
+            cumulative_time = end_time  # Update cumulative time for next line
+
+            # Convert seconds to VTT timestamp format (HH:MM:SS.mmm)
+            def seconds_to_timestamp(seconds):
+                hours = int(seconds // 3600)
+                minutes = int((seconds % 3600) // 60)
+                seconds = seconds % 60
+                return f"{hours:02}:{minutes:02}:{seconds:06.3f}"
+
+            formatted_sub_line = add_line_breaks(sub_line, max_line_length)
+            cue_index += 1
+            vtt_content += f"{cue_index}\n"
+            vtt_content += f"{seconds_to_timestamp(start_time)} --> {seconds_to_timestamp(end_time)} line:5% align:center\n"
+            vtt_content += f"{formatted_sub_line}\n\n"
 
     return vtt_content
 
