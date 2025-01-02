@@ -31,11 +31,20 @@ def get_cached_github_data(username: str, repo: str):
 
     file_tree = github_service.get_github_file_paths_as_list(username, repo)
     readme = github_service.get_github_readme(username, repo)
+    file_content = ""
+    try:
+        file_list = openai_service.get_important_files(file_tree)
+        for fpath in file_list:
+            content = github_service.get_github_file_content(username, repo, fpath)
+            file_content += f"FPATH: fpath CONTENT:{content}"
+    except Exception as e:
+        print(f"Some error in getting github file content {e}. Proceeding.")
 
     return {
         "default_branch": default_branch,
         "file_tree": file_tree,
-        "readme": readme
+        "readme": readme,
+        "file_content": file_content
     }
 
 
@@ -129,13 +138,14 @@ async def generate(request: Request, body: ApiRequest):
         default_branch = github_data["default_branch"]
         file_tree = github_data["file_tree"]
         readme = github_data["readme"]
+        file_content = github_data["file_content"]
 
         # Check combined token count
-        combined_content = f"{file_tree}\n{readme}"
-
+        combined_content = f"{file_tree}\n{readme}\n{file_content}"
+        print(combined_content)
         try:
             token_count = claude_service.count_tokens(combined_content)
-
+            print(f"TOKEN COUNT: {token_count}")
             # Modified token limit check
             if 100000 < token_count < 120000 and not body.api_key:
                 return {

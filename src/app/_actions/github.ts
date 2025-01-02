@@ -26,6 +26,6 @@ export const getStarCount = cache(async () => {
     return data.stargazers_count;
   } catch (error) {
     console.error("Error fetching star count:", error);
-    return null;
+    return 0;
   }
 });

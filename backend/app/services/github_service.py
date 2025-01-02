@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from base64 import b64decode
 
 load_dotenv()
 
@@ -172,3 +173,27 @@ class GitHubService:
         data = response.json()
         readme_content = requests.get(data['download_url']).text
         return readme_content
+
+    def get_github_file_content(self, username, repo, filepath):
+        """
+        Fetches the contents of a file from an open-source GitHub repository.
+
+        Args:
+            username (str): The GitHub username or organization name
+            repo (str): The repository name
+            filepath (str): The path to the file within the repository
+
+        Returns:
+            str: The contents of the specified file.
+        """
+        api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{filepath}"
+        response = requests.get(api_url, headers=self._get_headers())
+
+        if response.status_code == 404:
+            raise ValueError("File not found in the repository.")
+        elif response.status_code != 200:
+            raise Exception(f"Failed to fetch file: {response.status_code}, {response.json()}")
+
+        data = response.json()
+        file_content = b64decode(data['content'].replace("\n", "")).decode('utf-8')
+        return file_content
