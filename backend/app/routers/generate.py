@@ -12,6 +12,7 @@ from functools import lru_cache
 import re
 from tempfile import NamedTemporaryFile
 import base64
+import xml.etree.ElementTree as ET
 
 load_dotenv()
 
@@ -46,6 +47,34 @@ def get_cached_github_data(username: str, repo: str):
         "readme": readme,
         "file_content": file_content
     }
+
+# Function to validate SSML
+def is_valid_ssml(ssml: str) -> bool:
+    try:
+        # Attempt to parse the SSML as XML
+        ET.fromstring(ssml)
+        return True
+    except ET.ParseError:
+        return False
+
+
+# Function to generate SSML with retry logic
+def generate_ssml_with_retry(file_paths, prompt, max_retries=3, delay=2):
+    attempts = 0
+    while attempts < max_retries:
+        # Call the OpenAI function to generate SSML
+        ssml_response = openai_service.call_openai_for_response(file_paths, prompt)
+        filtered_ssml_response = '\n'.join(line for line in ssml_response.split('\n') if '```' not in line)
+
+        # Check if the generated SSML is valid
+        if is_valid_ssml(filtered_ssml_response):
+            return filtered_ssml_response
+
+        # If not valid, increment attempts and wait before retrying
+        attempts += 1
+
+    # Optionally raise an exception or return an error if max retries reached
+    raise ValueError("Failed to generate valid SSML after multiple attempts.")
 
 
 class ApiRequest(BaseModel):
@@ -165,9 +194,10 @@ async def generate(request: Request, body: ApiRequest):
             temp_file_path = temp_file.name  # Get the path of the temp file
 
         try:
+            ssml_response = generate_ssml_with_retry([temp_file_path], PODCAST_SSML_PROMPT)
 
-            ssml_response = openai_service.call_openai_for_response([temp_file_path], PODCAST_SSML_PROMPT)
-
+            # ssml_response = openai_service.call_openai_for_response([temp_file_path], PODCAST_SSML_PROMPT)
+            # filtered_ssml_response = '\n'.join(line for line in ssml_response.split('\n') if '```' not in line)
             # Process the ssml_response as needed
             # For example, you might want to return or log this response
             print(ssml_response)
@@ -182,13 +212,12 @@ async def generate(request: Request, body: ApiRequest):
         else:
             # ssml_string = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='en-US-AvaMultilingualNeural'>Hi The test was successfully completed, now use this place to insert actual data</voice></speak>"
             # Assuming ssml_response is a string with multiple lines
-            filtered_ssml_response = '\n'.join(line for line in ssml_response.split('\n') if '```' not in line)
 
-            audio_bytes = claude_service.text_to_mp3(filtered_ssml_response)
+            audio_bytes = claude_service.text_to_mp3(ssml_response)
             # mp3_bytes = convert_wav_to_mp3(audio_bytes)
             if audio_bytes:
                 response = Response(content=audio_bytes, media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=explanation.mp3"})
-                vtt_content = ssml_to_webvtt(filtered_ssml_response)
+                vtt_content = ssml_to_webvtt(ssml_response)
                 encoded_vtt_content = base64.b64encode(vtt_content.encode('utf-8')).decode('utf-8')
                 response.headers["X-VTT-Content"] = encoded_vtt_content
                 # Add CORS headers
