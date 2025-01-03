@@ -1,5 +1,6 @@
 import MainCard from "~/components/main-card";
 import Hero from "~/components/hero";
+import ProductHuntEmbed from "~/components/producthunt-embed";
 
 export default function HomePage() {
   return (
@@ -18,8 +19,11 @@ export default function HomePage() {
           Github URL
         </p>
       </div>
-      <div className="mb-16 flex justify-center lg:mb-0">
+      <div className="mb-16 flex flex-col items-center lg:mb-0">
         <MainCard />
+        <div className="mt-16">
+            <ProductHuntEmbed />
+        </div>
       </div>
     </main>
   );
