@@ -18,7 +18,8 @@ Also discuss something technically intriguing part that is something unique to t
 Discuss any important architectural patterns or design principles used in the project.
 Discuss in the podcast, the main components of the system (e.g., frontend, backend, database, building, external services).
 Discuss the relationships and interactions between these components.
-Make it a 10 minute long or longer podcast if possible.  Give atleast 160 voice tags (160 including closing tag) from each of the speakers."""
+Sometimes the answers can also be single word or very small so that it seems natural. Long answers all the time makes it monotonous.
+Make it a 10 minute long or longer podcast if possible.  Give atleast 80 voice tags for the host which is probably Ava here (160 including closing tag). + Same amount of voice tags for guest. Slowly count them and re-write the ssml if its falling short and then return the ssml."""
 
 SYSTEM_FIRST_PROMPT = """
 You are tasked with explaining to a principal software engineer how to draw the best and most accurate system design diagram / architecture of a given project. This explanation should be tailored to the specific project's purpose and structure. To accomplish this, you will be provided with two key pieces of information:

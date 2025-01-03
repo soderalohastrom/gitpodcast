@@ -171,6 +171,7 @@ async def generate(request: Request, body: ApiRequest):
 
         # Check combined token count
         combined_content = f"{file_tree}\n{readme}\n{file_content}"
+        combined_content = combined_content[:250000]
         print(combined_content)
         try:
             token_count = claude_service.count_tokens(combined_content)
