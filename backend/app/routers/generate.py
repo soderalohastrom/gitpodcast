@@ -13,6 +13,8 @@ import re
 from tempfile import NamedTemporaryFile
 import base64
 import xml.etree.ElementTree as ET
+from pydub import AudioSegment
+import io
 
 load_dotenv()
 
@@ -37,7 +39,8 @@ def get_cached_github_data(username: str, repo: str):
         file_list = openai_service.get_important_files(file_tree)
         for fpath in file_list:
             content = github_service.get_github_file_content(username, repo, fpath)
-            file_content += f"FPATH: fpath CONTENT:{content}"
+            discuss_or_not = "- discuss this file." if '.md' not in fpath else ""
+            file_content += f"FPATH: {fpath} {discuss_or_not} \n CONTENT:{content}"
     except Exception as e:
         print(f"Some error in getting github file content {e}. Proceeding.")
 
@@ -90,7 +93,15 @@ def calculate_duration(text_line, wpm=135):
     seconds = minutes * 60
     return seconds
 
-def ssml_to_webvtt(ssml_content, max_line_length=45, max_words_per_cue=30):
+def no_of_words(text_lines):
+    if isinstance(text_lines, str):  # If it's a single string
+        return len([word for word in text_lines.split() if word])
+    elif isinstance(text_lines, list):  # If it's a list of strings
+        return sum(len([word for word in line.split() if word]) for line in text_lines)
+    else:
+        return 0
+
+def ssml_to_webvtt(ssml_content, duration_in_seconds, max_line_length=45, max_words_per_cue=30):
     # Helper function to insert line breaks at appropriate places
     def add_line_breaks(text, max_length):
         words = text.split()
@@ -110,13 +121,14 @@ def ssml_to_webvtt(ssml_content, max_line_length=45, max_words_per_cue=30):
     text_content = re.sub(r'<speak[^>]*>|</speak>|<break[^>]*>', '', ssml_content)
     text_content = re.sub(r'<voice[^>]*>', '\n\n', text_content)
     text_content = re.sub(r'</voice>', '', text_content)
-    text_lines = filter(None, [line.strip() for line in text_content.splitlines()])
+    text_lines = list(filter(None, [line.strip() for line in text_content.splitlines()]))
 
     # Step 2: Generate WebVTT content with sequential timestamps
     vtt_content = "WEBVTT\n\n"
     cumulative_time = 0.0
     cue_index = 0
-
+    wpm = int(no_of_words(text_lines) / duration_in_seconds * 60)
+    print(wpm, " Words per minute")
     for i, line in enumerate(text_lines):
 
         # Break the line if it's too long into sub-lines based on word count
@@ -128,7 +140,7 @@ def ssml_to_webvtt(ssml_content, max_line_length=45, max_words_per_cue=30):
 
         # Generate VTT for each sub-line
         for sub_line in sub_lines:
-            duration = calculate_duration(sub_line)
+            duration = calculate_duration(sub_line, wpm=wpm)
             start_time = cumulative_time
             end_time = start_time + duration
             cumulative_time = end_time  # Update cumulative time for next line
@@ -170,7 +182,7 @@ async def generate(request: Request, body: ApiRequest):
         file_content = github_data["file_content"]
 
         # Check combined token count
-        combined_content = f"{file_tree}\n{readme}\n{file_content}"
+        combined_content = f"FILE TREE: {file_tree}\n README: {readme}\n IMPORTANT FILES: {file_content}"
         combined_content = combined_content[:250000]
         print(combined_content)
         try:
@@ -218,7 +230,11 @@ async def generate(request: Request, body: ApiRequest):
             # mp3_bytes = convert_wav_to_mp3(audio_bytes)
             if audio_bytes:
                 response = Response(content=audio_bytes, media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=explanation.mp3"})
-                vtt_content = ssml_to_webvtt(ssml_response)
+                # Assuming audio_bytes contains the audio data
+                audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="mp3")
+                duration_in_seconds = len(audio) / 1000.0
+                print("duration in sec", duration_in_seconds)
+                vtt_content = ssml_to_webvtt(ssml_response, duration_in_seconds)
                 encoded_vtt_content = base64.b64encode(vtt_content.encode('utf-8')).decode('utf-8')
                 response.headers["X-VTT-Content"] = encoded_vtt_content
                 # Add CORS headers

@@ -29,7 +29,7 @@ class OpenAIService:
         """
         # Read the content of the file specified by files_path
         with open(files_path[0], 'r') as file:
-            file_content = file.read()
+            file_content = file.read()  # this has everything readme + tree + other files
         # Send the prompt to Azure OpenAI for processing
         response = openai.chat.completions.create(
             model=self.model_name,
