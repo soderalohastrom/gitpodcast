@@ -2,7 +2,28 @@ import {
   cacheDiagramAndExplanation,
   getCachedDiagram,
   getCachedExplanation,
+  getCachedAudioBase64,
+  getCachedWebVtt,
+  cacheAudioAndWebVtt
 } from "~/app/_actions/cache";
+
+function blobToBuffer(blob: Blob): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        const buffer = Buffer.from(arrayBuffer);
+        resolve(buffer);
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+// Convert audioBlob to base64
+function b64encode(buffer: Buffer): string {
+    return buffer.toString('base64');
+  }
 
 interface GenerateApiResponse {
   error?: string;
@@ -84,6 +105,26 @@ interface GenerateAudioResponse {
    api_key?: string
  ): Promise<GenerateAudioResponse> {
    try {
+        // Determine if we should use the cache (75% probability)
+        const useCache = Math.random() < 0.75;
+        if (useCache) {
+            try{
+                // First, check cache for base64 encoded audio and WebVTT
+                const cachedAudioBase64 = await getCachedAudioBase64(username, repo);
+                const cachedVtt = await getCachedWebVtt(username, repo);
+
+                if (cachedAudioBase64 && cachedVtt) {
+                    console.info("Serving content from cache.");
+                    // Convert the base64 audio back to a Blob
+                    const cachedAudioBuffer = Buffer.from(cachedAudioBase64, 'base64');
+                    const cachedAudioBlob = new Blob([cachedAudioBuffer]);
+                    return { audioBlob: cachedAudioBlob, vtt: cachedVtt };
+                }
+            } catch (error) {
+                console.error("Error fetching from cache:", error);
+                // Handle the error appropriately, possibly return a fallback or rethrow
+            }
+        }
       const baseUrl =
         process.env.NEXT_PUBLIC_API_DEV_URL ?? "https://api.gitpodcast.com";
       const url = new URL(`${baseUrl}/generate`);
@@ -113,9 +154,16 @@ interface GenerateAudioResponse {
       }
 
       const audioBlob = await response.blob();
+      const audioBuffer = await blobToBuffer(audioBlob);
       const vttContent = response.headers.get("x-vtt-content");
-      console.log(vttContent + " vtt content");
 
+      // Call the server action to cache the diagram
+     await cacheAudioAndWebVtt(
+        username,
+        repo,
+        b64encode(audioBuffer),
+        vttContent ?? '',
+      );
       return { audioBlob: audioBlob,  vtt: vttContent ?? '' };
     } catch (error) {
       console.error("Error generating audio:", error);

@@ -6,6 +6,8 @@ import {
   pgTableCreator,
   timestamp,
   varchar,
+  integer,
+  text,
   primaryKey,
 } from "drizzle-orm/pg-core";
 
@@ -37,3 +39,24 @@ export const diagramCache = createTable(
     pk: primaryKey({ columns: [table.username, table.repo] }),
   }),
 );
+
+export const audioBlobStorage = createTable(
+    "audio_blob_storage",
+    {
+      username: varchar("username", { length: 256 }).notNull(),
+      repo: varchar("repo", { length: 256 }).notNull(),
+      audioBase64: text("audio_base64").notNull(), // Storing the actual audio data
+      duration: integer("duration"), // Duration of the audio in seconds
+      format: varchar("format", { length: 50 }),
+      webVtt: text("webvtt"), // Format of the audio file (e.g., mp3, wav)
+      createdAt: timestamp("created_at", { withTimezone: true })
+        .default(sql`CURRENT_TIMESTAMP`)
+        .notNull(),
+      updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+        () => new Date(),
+      ),
+    },
+    (table) => ({
+      pk: primaryKey({ columns: [table.username, table.repo] }),
+    }),
+  );

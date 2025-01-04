@@ -9,6 +9,18 @@ import {
 } from "~/lib/fetch-backend";
 import { exampleRepos } from "~/lib/exampleRepos";
 
+function base64ToUtf8(base64String: string) {
+    // Decode base64 to a binary string
+    const binaryString = atob(base64String);
+
+    // Convert the binary string to an array of character codes
+    const charCodes = Array.from(binaryString).map((char) => char.charCodeAt(0));
+
+    // Decode the array of character codes into a UTF-8 string
+    return new TextDecoder('utf-8').decode(new Uint8Array(charCodes));
+}
+
+
 export function useDiagram(username: string, repo: string) {
   const [diagram, setDiagram] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -70,7 +82,7 @@ export function useDiagram(username: string, repo: string) {
                 if (audioResult.vtt) {
                     // Decode the base64 content back to a text string
 
-                    const decodedVtt = atob(audioResult.vtt);
+                    const decodedVtt = base64ToUtf8(audioResult.vtt);
                     console.log(decodedVtt);
                     // Create a Blob with the decoded VTT content
                     const vttBlob = new Blob([decodedVtt], { type: 'text/vtt' });
