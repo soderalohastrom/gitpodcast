@@ -15,6 +15,7 @@ import base64
 import xml.etree.ElementTree as ET
 from pydub import AudioSegment
 import io
+import textwrap
 
 load_dotenv()
 
@@ -124,7 +125,10 @@ def ssml_to_webvtt(ssml_content, duration_in_seconds, max_line_length=45, max_wo
     text_lines = list(filter(None, [line.strip() for line in text_content.splitlines()]))
 
     # Step 2: Generate WebVTT content with sequential timestamps
-    vtt_content = "WEBVTT\n\n"
+    vtt_content = textwrap.dedent("""\
+        WEBVTT
+
+        """)
     cumulative_time = 0.0
     cue_index = 0
     wpm = int(no_of_words(text_lines) / duration_in_seconds * 60)

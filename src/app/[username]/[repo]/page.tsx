@@ -6,9 +6,21 @@ import Loading from "~/components/loading";
 import { useDiagram } from "~/hooks/useDiagram";
 import { ApiKeyDialog } from "~/components/api-key-dialog";
 import { Button } from "~/components/ui/button";
+import {
+    Card,
+    CardTitle,
+    CardHeader
+  } from "~/components/ui/card"
 import { ApiKeyButton } from "~/components/api-key-button";
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
+import {parseWebVTT, syncSubtitle} from "~/lib/utils";
+
+interface Subtitle {
+    start: number;
+    end: number;
+    text: string;
+  }
 
 export default function Repo() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -33,7 +45,52 @@ export default function Repo() {
     audioRef,
     subtitleUrl
   } = useDiagram(params.username, params.repo);
+  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
+  const [currentSubtitle, setCurrentSubtitle] = useState("");
 
+  useEffect(() => {
+    async function fetchSubtitles() {
+      const res = await fetch(subtitleUrl);
+      const vtt = await res.text();
+      setSubtitles(parseWebVTT(vtt));
+    }
+
+    fetchSubtitles();
+  }, [subtitleUrl]);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const handleTimeUpdate = () => {
+      const time = videoRef?.current?.currentTime;
+
+      if (!subtitles || subtitles.length === 0) {
+        setCurrentSubtitle(''); // Clear the subtitle if subtitles are not loaded
+        return;
+      }
+
+      const index = syncSubtitle(subtitles, time);
+      if (
+        index !== null &&
+        index !== undefined &&
+        index >= 0 &&
+        index < subtitles.length &&
+        subtitles[index] // Ensure the subtitle at the index is not undefined
+      ) {
+        setCurrentSubtitle(subtitles[index].text ?? '');
+      } else {
+        setCurrentSubtitle(''); // Clear the subtitle if the index is invalid
+      }
+    };
+
+    videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+      }
+    };
+  }, [subtitles]);
 
   return (
     <div className="flex min-h-screen flex-col items-center p-4">
@@ -72,23 +129,37 @@ export default function Repo() {
             )}
           </div>
         ) : (
-          <div className="flex w-full justify-center px-4">
+          <div className="flex w-full justify-center">
 
               {audioUrl ? (
-            <div>
-                <video ref={videoRef} id="audioVideo"  height={360} width={380} controls crossOrigin="anonymous">
-                    <source src={audioUrl} type="audio/mp3" />
-                    <track src={subtitleUrl} kind="subtitles" label="English" srcLang="en" default/>
-                </video>
-            </div>
+                <div className="flex w-full justify-center flex-col" style={{ maxWidth: "360px" }} >
+                    <div>
+                        <audio ref={videoRef} style={{ width: "100%" }} id="audioVideo" controls crossOrigin="anonymous">
+                            <source src={audioUrl} type="audio/mp3" />
+                            {/* <track src={subtitleUrl} kind="subtitles" label="English" srcLang="en" default/> */}
+                        </audio>
+                    </div>
+                    <div style={{ height: "300px" }}>
+                        <div className="flex w-full justify-center px-2" >
+                            <Card className=" mt-2" style={{ width: "100%" }}>
+                                <CardHeader className="break-words" >
+                                    <CardTitle className="break-words">{currentSubtitle}</CardTitle>
+                                </CardHeader>
+                            </Card>
+                        </div>
+                    </div>
+
+                </div>
 
             ) : (
+
               <Button
                 onClick={handleAudio}
                 className="border-[3px] border-black bg-orange-400 px-4 py-2 text-black shadow-[4px_4px_0_0_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-orange-300"
               >
                 Play Explanation Audio
               </Button>
+
             )}
           </div>
         )}

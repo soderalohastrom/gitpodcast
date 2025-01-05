@@ -69,7 +69,18 @@ video {
     border: 1px solid #aaaaaa00;
     object-fit: initial;
  }
- ::cue {
-    font-size: 1.98em;
 
+ ::cue {
+    font-size: 1.98rem;
  }
+
+ .subtitle {
+    font-size: 1.2rem;
+    font-weight: bolder;
+    line-height: 1.5;
+    text-align: center;
+    text-transform: uppercase;
+    max-width: 300px;
+    margin-top: 40px;
+    color: rgb(8, 136, 44);
+}
