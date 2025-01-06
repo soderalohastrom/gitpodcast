@@ -11,7 +11,6 @@
 
 [![Image](./docs/readme_img.png "GitPodcast Front Page")](https://gitpodcast.com/)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 # GitPodcast
 
