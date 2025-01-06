@@ -1,3 +1,14 @@
+
+<div align="center">
+
+[![Start](https://img.shields.io/github/stars/BandarLabs/gitpodcast?color=yellow&style=flat&label=%E2%AD%90%20stars)]((https://github.com/BandarLabs/gitpodcast/stargazers))
+[![License](http://img.shields.io/:license-MIT-green.svg?style=flat)](https://github.com/BandarLabs/gitpodcast/blob/master/LICENSE)
+</div>
+
+<div align="center">
+<a href="https://www.producthunt.com/posts/gitpodcast?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-gitpodcast" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=750368&theme=light" alt="GitPodcast - Generate&#0032;engaging&#0032;podcast&#0032;to&#0032;understand&#0032;a&#0032;Github&#0032;repo | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+</div>
+
 [![Image](./docs/readme_img.png "GitPodcast Front Page")](https://gitpodcast.com/)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
