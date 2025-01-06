@@ -1,7 +1,7 @@
 
 <div align="center">
 
-[![Start](https://img.shields.io/github/stars/BandarLabs/gitpodcast?color=yellow&style=flat&label=%E2%AD%90%20stars)]((https://github.com/BandarLabs/gitpodcast/stargazers))
+[![Start](https://img.shields.io/github/stars/BandarLabs/gitpodcast?color=yellow&style=flat&label=%E2%AD%90%20stars)](https://github.com/BandarLabs/gitpodcast/stargazers)
 [![License](http://img.shields.io/:license-MIT-green.svg?style=flat)](https://github.com/BandarLabs/gitpodcast/blob/master/LICENSE)
 </div>
 
