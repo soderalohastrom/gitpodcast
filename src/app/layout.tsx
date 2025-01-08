@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Header } from "~/components/header";
 import { Footer } from "~/components/footer";
-import { CSPostHogProvider } from "./providers";
+import { CSPostHogProvider, GlobalStateProvider } from "./providers";
 
 export const metadata: Metadata = {
   title: "GitPodcast",
@@ -34,8 +34,7 @@ export const metadata: Metadata = {
     "software development",
     "open source",
     "open source software",
-    "ahmedkhaleel2004",
-    "ahmed khaleel",
+    "bandarlabs",
     "gitpodcast",
     "gitpodcast.com",
   ],
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
     title: "GitPodcast - Repository to Podcast in Seconds",
     description:
       "Turn any GitHub repository into an engaging podcast in seconds.",
-    siteName: "GitDiagram",
+    siteName: "GitPodcast",
     images: [
       {
         url: "/og-image.png?v=2", // You'll need to create this image
@@ -76,13 +75,15 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <CSPostHogProvider>
-        <body className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-        </body>
-      </CSPostHogProvider>
+        <GlobalStateProvider>
+            <CSPostHogProvider>
+                <body className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-grow">{children}</main>
+                <Footer />
+                </body>
+            </CSPostHogProvider>
+      </GlobalStateProvider>
     </html>
   );
 }

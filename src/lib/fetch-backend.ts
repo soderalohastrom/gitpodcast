@@ -101,8 +101,10 @@ interface GenerateAudioResponse {
  export async function generateAudio(
     username: string,
    repo: string,
+   audio_length: string,
    instructions?: string,
-   api_key?: string
+   api_key?: string,
+
  ): Promise<GenerateAudioResponse> {
    try {
         // Determine if we should use the cache (75% probability)
@@ -110,8 +112,9 @@ interface GenerateAudioResponse {
         if (useCache) {
             try{
                 // First, check cache for base64 encoded audio and WebVTT
-                const cachedAudioBase64 = await getCachedAudioBase64(username, repo);
-                const cachedVtt = await getCachedWebVtt(username, repo);
+                // So as to not having to modify db, using repo + audio_length as repo name
+                const cachedAudioBase64 = await getCachedAudioBase64(username, repo + "|" + audio_length);
+                const cachedVtt = await getCachedWebVtt(username, repo + "|" + audio_length);
 
                 if (cachedAudioBase64 && cachedVtt) {
                     console.info("Serving content from cache.");
@@ -141,6 +144,7 @@ interface GenerateAudioResponse {
           instructions: instructions ?? "",
           api_key: api_key,
           audio: true,
+          audio_length: audio_length
         }),
       });
 
@@ -160,7 +164,7 @@ interface GenerateAudioResponse {
       // Call the server action to cache the diagram
      await cacheAudioAndWebVtt(
         username,
-        repo,
+        repo + "|" + audio_length,
         b64encode(audioBuffer),
         vttContent ?? '',
       );

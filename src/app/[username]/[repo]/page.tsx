@@ -15,6 +15,7 @@ import { ApiKeyButton } from "~/components/api-key-button";
 import React, { useRef, useState, useEffect } from 'react';
 
 import {parseWebVTT, syncSubtitle} from "~/lib/utils";
+import { useGlobalState } from "~/app/providers";
 
 interface Subtitle {
     start: number;
@@ -22,9 +23,15 @@ interface Subtitle {
     text: string;
   }
 
-export default function Repo() {
+  type RepoProps = {
+    audioLength: string | null;
+  };
+
+const Repo: React.FC<RepoProps> = () =>  {
+  const {audioLength, anotherVariable} = useGlobalState();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const params = useParams<{ username: string; repo: string }>();
+
   const {
     diagram,
     error,
@@ -44,9 +51,12 @@ export default function Repo() {
     audioUrl,
     audioRef,
     subtitleUrl
-  } = useDiagram(params.username, params.repo);
+  } = useDiagram(params.username, params.repo, audioLength, anotherVariable);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState("");
+//   useEffect(() => {
+//     console.log("anotherVariable has changed:", anotherVariable);
+//   }, [anotherVariable]);
 
   useEffect(() => {
     async function fetchSubtitles() {
@@ -175,3 +185,5 @@ export default function Repo() {
     </div>
   );
 }
+
+export default Repo;

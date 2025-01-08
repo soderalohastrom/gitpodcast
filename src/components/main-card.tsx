@@ -9,6 +9,7 @@ import { Sparkles } from "lucide-react";
 import React from "react";
 import { CustomizationDropdown } from "./customization-dropdown";
 import { exampleRepos } from "~/lib/exampleRepos";
+import { useGlobalState } from "~/app/providers";
 
 interface MainCardProps {
   isHome?: boolean;
@@ -30,16 +31,23 @@ export default function MainCard({
   onRegenerate,
   onCopy,
   lastGenerated,
-}: MainCardProps) {
+}: Readonly<MainCardProps>) {
+  const { audioLength, setAudioLength, setAnotherVariable } = useGlobalState();
   const [repoUrl, setRepoUrl] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-
+  const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (setAudioLength) {
+        setAudioLength(event.target.value);
+    } else {
+        console.warn('setAudioLength is not defined');
+    }
+  };
   useEffect(() => {
     if (username && repo) {
       setRepoUrl(`https://github.com/${username}/${repo}`);
     }
-  }, [username, repo]);
+  }, [username, repo, audioLength]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +69,11 @@ export default function MainCard({
     }
     const sanitizedUsername = encodeURIComponent(username);
     const sanitizedRepo = encodeURIComponent(repo);
+
+
+    // Just to trigger page reload on "Podcast" button press
+    const randomNum = Math.floor(Math.random() * 10000000) + 1;
+    setAnotherVariable(randomNum.toString());
     router.push(`/${sanitizedUsername}/${sanitizedRepo}`);
   };
 
@@ -90,7 +103,28 @@ export default function MainCard({
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
-
+        <div>
+      <label>
+        <input
+          type="radio"
+          name="audioLength"
+          value="short"
+          onChange={handleRadioChange}
+          checked={audioLength === 'short'}
+        />
+        Short (~5min)
+      </label>
+      <label>
+        <input
+          type="radio"
+          name="audioLength"
+          value="long"
+          onChange={handleRadioChange}
+          checked={audioLength === 'long'}
+        />
+        Long (~10min)
+      </label>
+    </div>
         {showCustomization &&
           onModify &&
           onRegenerate &&

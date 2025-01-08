@@ -23,3 +23,42 @@ if (typeof window !== "undefined") {
 export function CSPostHogProvider({ children }: { children: React.ReactNode }) {
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 }
+
+import React, { createContext, useContext, useMemo, useState } from 'react';
+
+// Define the structure of the global state
+const GlobalStateContext = createContext<{
+  audioLength: string;
+  setAudioLength: (length: string) => void;
+  anotherVariable: string;
+  setAnotherVariable: (value: string) => void;
+} | undefined>(undefined);
+
+// use of dynamic routes like [username]/[repo]/page.tsx is forcing us to use global context else
+// we could have passed audioLength via props
+export const GlobalStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [audioLength, setAudioLength] = useState("long");
+  const [anotherVariable, setAnotherVariable] = useState("defaultValue");
+
+  // Use useMemo to memoize the context value
+  const value = useMemo(() => ({
+    audioLength,
+    setAudioLength,
+    anotherVariable,
+    setAnotherVariable
+  }), [audioLength, anotherVariable]);
+
+  return (
+    <GlobalStateContext.Provider value={value}>
+      {children}
+    </GlobalStateContext.Provider>
+  );
+};
+
+export const useGlobalState = () => {
+  const context = useContext(GlobalStateContext);
+  if (!context) {
+    throw new Error('useGlobalState must be used within a GlobalStateProvider');
+  }
+  return context;
+};

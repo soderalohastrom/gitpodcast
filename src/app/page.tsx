@@ -2,7 +2,10 @@ import MainCard from "~/components/main-card";
 import Hero from "~/components/hero";
 import ProductHuntEmbed from "~/components/producthunt-embed";
 
+
+
 export default function HomePage() {
+
   return (
     <main className="flex-grow px-8 pb-8 md:p-8">
       <div className="mx-auto mb-4 max-w-4xl lg:my-8">
@@ -20,7 +23,7 @@ export default function HomePage() {
         </p>
       </div>
       <div className="mb-16 flex flex-col items-center lg:mb-0">
-        <MainCard />
+        <MainCard/>
         <div className="mt-16">
             <ProductHuntEmbed />
         </div>

@@ -21,7 +21,7 @@ function base64ToUtf8(base64String: string) {
 }
 
 
-export function useDiagram(username: string, repo: string) {
+export function useDiagram(username: string, repo: string, audio_length: string, anotherVariable: string) {
   const [diagram, setDiagram] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -71,7 +71,7 @@ export function useDiagram(username: string, repo: string) {
         setLoading(true);
         setError("");
         try {
-            const audioResult = await generateAudio(username, repo, "");
+            const audioResult = await generateAudio(username, repo, audio_length, "");
 
             if (audioResult.error) {
                 setError(audioResult.error);
@@ -101,7 +101,7 @@ export function useDiagram(username: string, repo: string) {
         } finally {
             setLoading(false);
         }
-    }, [username, repo]); // Add dependencies
+    }, [username, repo, anotherVariable]); // Add dependencies
 
     useEffect(() => {
         void handleAudio();
