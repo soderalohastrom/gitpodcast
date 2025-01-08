@@ -6,6 +6,7 @@ import re
 import textwrap
 import xml.etree.ElementTree as ET
 
+
 load_dotenv()
 
 openai_service = OpenAIService()
@@ -110,6 +111,7 @@ class SpeechService:
         text_content = re.sub(r'<speak[^>]*>|</speak>|<break[^>]*>', '', ssml_content)
         text_content = re.sub(r'<voice[^>]*>', '\n\n', text_content)
         text_content = re.sub(r'</voice>', '', text_content)
+        text_content = re.sub(r'<emphasis[^>]*>|</emphasis>', '', text_content)
         text_lines = list(filter(None, [line.strip() for line in text_content.splitlines()]))
 
         # Step 2: Generate WebVTT content with sequential timestamps
@@ -174,6 +176,33 @@ class SpeechService:
         except ET.ParseError:
             return False
 
+    # Function to sanitize SSML by removing invalid break and code tags
+    def sanitize_ssml(self, ssml: str) -> str:
+        try:
+            # Parse the input SSML
+            root = ET.fromstring(ssml)
+
+            # The namespace URI if any (extracted from the root tag)
+            default_ns_uri = root.tag.split('}')[0].strip('{')
+
+            # Remove non-<voice> children while preserving the element itself
+            for child in list(root):
+                # Extract the local name by splitting the namespace
+                tag_name = child.tag
+                tag_without_ns = tag_name.split('}')[1] if '}' in tag_name else tag_name
+
+                if tag_without_ns != 'voice':
+                    root.remove(child)
+
+            # Declare default namespaces
+            ET.register_namespace('', default_ns_uri)
+
+            # Return the modified XML as a string
+            return ET.tostring(root, encoding='unicode')
+        except ET.ParseError:
+            # In case of parsing errors, simply return the original SSML
+            return ssml
+
     # Function to generate SSML with retry logic
     def generate_ssml_with_retry(self, file_paths, prompt, max_retries=3, delay=2):
         attempts = 0
@@ -181,10 +210,12 @@ class SpeechService:
             # Call the OpenAI function to generate SSML
             ssml_response = openai_service.call_openai_for_response(file_paths, prompt)
             filtered_ssml_response = '\n'.join(line for line in ssml_response.split('\n') if '```' not in line)
+            # Sanitize the SSML
+            sanitized_ssml = self.sanitize_ssml(filtered_ssml_response)
 
-            # Check if the generated SSML is valid
-            if self.is_valid_ssml(filtered_ssml_response):
-                return filtered_ssml_response
+            # Check if the sanitized SSML is valid
+            if self.is_valid_ssml(sanitized_ssml):
+                return sanitized_ssml
 
             # If not valid, increment attempts and wait before retrying
             attempts += 1
