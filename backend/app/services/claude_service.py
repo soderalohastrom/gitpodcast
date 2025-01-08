@@ -1,25 +1,8 @@
 from anthropic import Anthropic
 from dotenv import load_dotenv
-import azure.cognitiveservices.speech as speechsdk
 import os
 
 load_dotenv()
-
-class MemoryStreamCallback(speechsdk.audio.PushAudioOutputStreamCallback):
-    def __init__(self):
-        super().__init__()
-        self._audio_data = bytes()
-
-    def write(self, audio_buffer: memoryview) -> int:
-        self._audio_data += bytes(audio_buffer)
-        return audio_buffer.nbytes
-
-    def close(self):
-        pass
-
-    def get_audio_data(self) -> bytes:
-         return self._audio_data
-
 
 class ClaudeService:
     def __init__(self):
@@ -105,48 +88,3 @@ class ClaudeService:
             }]
         )
         return response.input_tokens
-
-    def text_to_mp3(self, ssml_string: str) -> bytes | None:
-        """
-        Converts a string to an mp3 bytes object using Azure Text to Speech
-
-        Args:
-            ssml_string (str): Text to be converted to speech
-
-        Returns:
-            bytes | None: Returns mp3 bytes object, None if error
-        """
-
-        if not self.speech_key or not self.speech_region:
-            return None
-        print(self.speech_key, ssml_string)
-
-
-        # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
-        speech_config = speechsdk.SpeechConfig(subscription=os.environ.get('SPEECH_KEY'), region=os.environ.get('SPEECH_REGION'))
-        print("s1")
-        # The neural multilingual voice can speak different languages based on the input text.
-        speech_config.speech_synthesis_voice_name='en-US-AvaMultilingualNeural'
-
-        speech_config.set_speech_synthesis_output_format(speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3)
-
-        # # Creates a memory stream as the audio output stream instead of a file.
-        # audio_config = speechsdk.audio.AudioOutputConfig(stream=speechsdk.audio.PushAudioOutputStream(speechsdk.audio.MemoryStreamCallback()), use_default_speaker=True)
-        # speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
-
-        # Creates a memory stream as the audio output stream instead of a file.
-        stream_callback = MemoryStreamCallback()
-        audio_stream = speechsdk.audio.AudioOutputConfig(stream=speechsdk.audio.PushAudioOutputStream(stream_callback))
-
-        speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_stream)
-
-        result = speech_synthesizer.speak_ssml_async(ssml_string).get()
-
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            return stream_callback.get_audio_data()
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation_details = result.cancellation_details
-            print("Speech synthesis canceled: {}".format(cancellation_details.reason))
-            if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                print("Error details: {}".format(cancellation_details.error_details))
-            return b""
