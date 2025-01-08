@@ -10,6 +10,8 @@ import React from "react";
 import { CustomizationDropdown } from "./customization-dropdown";
 import { exampleRepos } from "~/lib/exampleRepos";
 import { useGlobalState } from "~/app/providers";
+import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 interface MainCardProps {
   isHome?: boolean;
@@ -104,27 +106,20 @@ export default function MainCard({
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div>
-      <label>
-        <input
-          type="radio"
-          name="audioLength"
-          value="short"
-          onChange={handleRadioChange}
-          checked={audioLength === 'short'}
-        />
-        Short (~5min)
-      </label>
-      <label>
-        <input
-          type="radio"
-          name="audioLength"
-          value="long"
-          onChange={handleRadioChange}
-          checked={audioLength === 'long'}
-        />
-        Long (~10min)
-      </label>
-    </div>
+        <RadioGroup
+            defaultValue={audioLength}
+            onValueChange={(value) => setAudioLength && setAudioLength(value)}
+        >
+            <div className="flex items-center space-x-2">
+            <RadioGroupItem value="short" id="short" />
+            <Label htmlFor="short">Short (~5min)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+            <RadioGroupItem value="long" id="long" />
+            <Label htmlFor="long">Long (~10min)</Label>
+            </div>
+        </RadioGroup>
+        </div>
         {showCustomization &&
           onModify &&
           onRegenerate &&
